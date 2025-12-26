@@ -234,12 +234,12 @@
         }
         
         function calculateWorkingDay(targetDate) {
-            const start = new Date('2025-01-03');
+            const start = new Date('2026-01-01');
             let wd = 1, cur = new Date(start);
-            if (cur > targetDate) return 1;
+            if (targetDate < start) return 1;  // 시작 전이면 1일차
             while (cur < targetDate) {
                 cur.setDate(cur.getDate() + 1);
-                if (cur.getDay() !== 0) wd++;
+                if (cur.getDay() !== 0) wd++;  // 일요일 제외
             }
             return Math.min(wd, 397);
         }
