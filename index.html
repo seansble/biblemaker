@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>매일 말씀 카드 생성기</title>
+    <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #f3f4f6; font-family: 'Noto Sans KR', sans-serif; padding: 20px; min-height: 100vh; }
+        .container { max-width: 1200px; margin: 0 auto; display: flex; gap: 30px; flex-wrap: wrap; justify-content: center; }
+        .header-title { width: 100%; text-align: center; margin-bottom: 20px; }
+        .header-title h1 { font-size: 24px; color: #333; margin-bottom: 8px; }
+        .header-title p { color: #666; font-size: 14px; }
+        
+        .control-panel { background: white; padding: 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); width: 350px; }
+        .control-panel h2 { font-size: 18px; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
+        .input-group { margin-bottom: 14px; }
+        .input-group label { display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 4px; }
+        .input-group input, .input-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; font-family: inherit; }
+        .input-group textarea { resize: vertical; min-height: 80px; }
+        .input-row { display: flex; gap: 10px; }
+        .input-row .input-group { flex: 1; }
+        .btn-generate { width: 100%; padding: 14px; background: #8B9D77; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 10px; }
+        .btn-generate:hover { background: #738461; }
+        .auto-load-info { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px; padding: 10px; margin-bottom: 16px; font-size: 12px; color: #0369a1; }
+        
+        #card-preview { width: 550px; max-width: 100%; background: #FDFBF7; font-family: 'Gowun Batang', serif; position: relative; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .hero-bg { position: absolute; top: 0; left: 0; width: 100%; height: 220px; background-size: cover; background-position: center; }
+        .hero-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 220px; background: linear-gradient(to bottom, rgba(253,251,247,0.5) 0%, rgba(253,251,247,0.85) 50%, rgba(253,251,247,1) 100%); }
+        .top-deco { position: relative; z-index: 10; height: 6px; background: linear-gradient(90deg, #8B9D77 0%, #D4A373 100%); }
+        .content { position: relative; z-index: 10; padding: 26px; }
+        .header { text-align: center; margin-bottom: 18px; }
+        .greeting { color: #5D4E37; font-weight: 800; font-size: 22px; margin-bottom: 8px; }
+        .date { font-size: 40px; font-weight: 800; color: #2C3E50; margin-bottom: 8px; }
+        .holiday { color: #C0392B; font-weight: 800; font-size: 23px; }
+        .weather-box { display: flex; justify-content: center; gap: 16px; font-size: 21px; color: #555; font-weight: 700; background: rgba(255,255,255,0.95); padding: 12px 22px; border-radius: 999px; margin: 0 auto 12px; width: fit-content; }
+        .weather-box .sep { color: #ccc; }
+        .divider { position: relative; margin: 20px 0; display: flex; align-items: center; justify-content: center; }
+        .divider::before, .divider::after { content: ''; flex: 1; border-top: 1px dashed #D1CCC0; }
+        .divider span { padding: 0 16px; color: #D4A373; font-size: 24px; }
+        .reading-box { background: white; border: 1px solid #EAE6DB; border-radius: 12px; padding: 20px; margin-bottom: 12px; }
+        .reading-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+        .reading-title { font-weight: 800; font-size: 22px; color: #444; }
+        .progress-text { font-size: 18px; color: #666; background: #F3F4F6; padding: 5px 10px; border-radius: 4px; font-family: 'Noto Sans KR', sans-serif; font-weight: 700; }
+        .reading-range { font-size: 26px; font-weight: 800; color: #2C3E50; margin-bottom: 14px; }
+        .progress-bar-container { background: #E8E8E8; border-radius: 999px; height: 14px; overflow: hidden; }
+        .progress-bar { background: linear-gradient(90deg, #8B9D77 0%, #A8B894 100%); height: 100%; border-radius: 999px; }
+        .verse-section { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 20px 0; }
+        .quote { color: #D4A373; opacity: 0.5; font-size: 48px; line-height: 1; }
+        .verse-text { font-size: 24px; font-weight: 800; line-height: 1.8; color: #2C3E50; padding: 12px 16px; word-break: keep-all; }
+        .verse-ref { margin-top: 16px; color: #8B9D77; font-weight: 800; font-size: 22px; }
+        .footer { padding-top: 18px; border-top: 1px solid #EAE6DB; text-align: center; font-size: 21px; color: #777; font-weight: 700; font-family: 'Noto Sans KR', sans-serif; }
+        
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .container { flex-direction: column; gap: 15px; }
+            .control-panel { width: 100%; order: 2; padding: 16px; }
+            #card-preview { width: 100%; order: 1; }
+            .header-title h1 { font-size: 18px; }
+            .content { padding: 18px; }
+            .greeting { font-size: 16px; }
+            .date { font-size: 28px; }
+            .holiday { font-size: 17px; }
+            .weather-box { font-size: 15px; padding: 10px 16px; gap: 10px; }
+            .reading-title { font-size: 16px; }
+            .progress-text { font-size: 12px; }
+            .reading-range { font-size: 18px; }
+            .reading-box { padding: 14px; }
+            .verse-text { font-size: 16px; }
+            .verse-ref { font-size: 15px; }
+            .footer { font-size: 14px; }
+            .quote { font-size: 32px; }
+            .hero-bg, .hero-overlay { height: 150px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-title">
+            <h1>🌿 매일 말씀 카드 생성기</h1>
+            <p>날짜 선택 → 자동 입력!</p>
+        </div>
+        
+        <div id="card-preview">
+            <div class="hero-bg" id="hero-bg"></div>
+            <div class="hero-overlay"></div>
+            <div class="top-deco"></div>
+            <div class="content">
+                <div class="header">
+                    <div class="greeting">🌅 좋은 아침이에요!</div>
+                    <div class="date" id="card-date">12월 26일 금요일</div>
+                    <div class="holiday" id="card-holiday" style="display: none;"></div>
+                </div>
+                <div class="weather-box">
+                    <span id="card-weather">전주: -7°C 맑음 ☀️</span>
+                    <span class="sep">|</span>
+                    <span>미세먼지: <span id="card-dust">좋음 😊</span></span>
+                </div>
+                <div class="divider"><span>✝</span></div>
+                <div class="reading-box">
+                    <div class="reading-header">
+                        <span class="reading-title">📖 오늘의 성경 통독</span>
+                        <span class="progress-text" id="card-progress">1차/397차 (0.3%)</span>
+                    </div>
+                    <div class="reading-range" id="card-title">창세기 1장 ~ 3장</div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="card-progress-bar" style="width: 0.3%;"></div>
+                    </div>
+                </div>
+                <div class="divider"><span>✝</span></div>
+                <div class="verse-section">
+                    <div class="quote">❝</div>
+                    <div class="verse-text" id="card-verse">말씀을 로딩 중...</div>
+                    <div class="quote">❞</div>
+                    <div class="verse-ref" id="card-verseRef">- ()</div>
+                </div>
+                <div class="footer">오늘도 은혜로운 하루 되세요! 🙏</div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <h2>✏️ 내용 입력</h2>
+            <div class="auto-load-info">📅 날짜 선택 → 성경/특별일 자동!</div>
+            
+            <div class="input-group">
+                <label>날짜 선택</label>
+                <input type="date" id="input-date-picker" onchange="onDateChange()">
+            </div>
+            <div class="input-group">
+                <label>날짜 표시</label>
+                <input type="text" id="input-dateStr" oninput="updateCard()">
+            </div>
+            <div class="input-group">
+                <label>특별일</label>
+                <input type="text" id="input-holiday" placeholder="자동 입력됨" oninput="updateCard()">
+            </div>
+            <div class="input-row">
+                <div class="input-group">
+                    <label>날씨</label>
+                    <input type="text" id="input-weather" value="전주: -7°C 맑음 ☀️" oninput="updateCard()">
+                </div>
+                <div class="input-group">
+                    <label>미세먼지</label>
+                    <input type="text" id="input-dust" value="좋음 😊" oninput="updateCard()">
+                </div>
+            </div>
+            <hr style="margin: 12px 0; border: none; border-top: 1px solid #eee;">
+            <div class="input-group">
+                <label>📖 성경 통독</label>
+                <input type="text" id="input-title" oninput="updateCard()">
+            </div>
+            <div class="input-row">
+                <div class="input-group">
+                    <label>현재 차수</label>
+                    <input type="number" id="input-current" value="1" oninput="updateCard()">
+                </div>
+                <div class="input-group">
+                    <label>전체</label>
+                    <input type="number" id="input-total" value="397" readonly>
+                </div>
+            </div>
+            <hr style="margin: 12px 0; border: none; border-top: 1px solid #eee;">
+            <div class="input-group">
+                <label>✝️ 오늘의 말씀</label>
+                <textarea id="input-verse" oninput="updateCard()"></textarea>
+            </div>
+            <div class="input-group">
+                <label>말씀 출처</label>
+                <input type="text" id="input-verseRef" oninput="updateCard()">
+            </div>
+            <button class="btn-generate" onclick="downloadCard()">📸 이미지로 저장</button>
+        </div>
+    </div>
+
+    <script>
+        const bgImages = ['',
+            'https://images.unsplash.com/photo-1486739985386-d4fae04ca6f7?w=600&q=80',
+            'https://images.unsplash.com/photo-1518134260364-54c7d018693c?w=600&q=80',
+            'https://images.unsplash.com/photo-1490750967868-58cb75069faf?w=600&q=80',
+            'https://images.unsplash.com/photo-1522748906645-95d8adfd52c7?w=600&q=80',
+            'https://images.unsplash.com/photo-1552596594-64f20e8b15ce?w=600&q=80',
+            'https://images.unsplash.com/photo-1625246333195-f81961856126?w=600&q=80',
+            'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&q=80',
+            'https://images.unsplash.com/photo-1500964757637-c85e8a162699?w=600&q=80',
+            'https://images.unsplash.com/photo-1508881299967-1725585d8d35?w=600&q=80',
+            'https://images.unsplash.com/photo-1507371341162-763b5e419408?w=600&q=80',
+            'https://images.unsplash.com/photo-1476820865390-c52aeebb9891?w=600&q=80',
+            'https://images.unsplash.com/photo-1543589077-47d81606c1bf?w=600&q=80'
+        ];
+        
+        let bibleData = [], specialDays = [];
+        
+        window.onload = async function() {
+            try {
+                const [b, s] = await Promise.all([
+                    fetch('bible.json').then(r => r.json()),
+                    fetch('special.json').then(r => r.json())
+                ]);
+                bibleData = b;
+                specialDays = s;
+                console.log('✅ 데이터 로드 완료:', bibleData.length + '일, ' + specialDays.length + '개 특별일');
+            } catch(e) {
+                console.error('❌ JSON 로드 실패:', e);
+            }
+            document.getElementById('input-date-picker').valueAsDate = new Date();
+            onDateChange();
+        };
+        
+        function onDateChange() {
+            const date = new Date(document.getElementById('input-date-picker').value);
+            const month = date.getMonth() + 1, day = date.getDate();
+            const weekdays = ['일','월','화','수','목','금','토'];
+            
+            document.getElementById('input-dateStr').value = `${month}월 ${day}일 ${weekdays[date.getDay()]}요일`;
+            
+            const mmdd = String(month).padStart(2,'0') + '-' + String(day).padStart(2,'0');
+            const special = specialDays.find(s => s.date === mmdd);
+            document.getElementById('input-holiday').value = special ? special.name : '';
+            
+            const workingDay = calculateWorkingDay(date);
+            document.getElementById('input-current').value = workingDay;
+            
+            const bible = bibleData.find(b => b.day === workingDay);
+            if (bible) {
+                document.getElementById('input-title').value = bible.title;
+                document.getElementById('input-verse').value = bible.text;
+                document.getElementById('input-verseRef').value = bible.short;
+            }
+            
+            document.getElementById('hero-bg').style.backgroundImage = `url('${bgImages[month]}')`;
+            updateCard();
+        }
+        
+        function calculateWorkingDay(targetDate) {
+            const start = new Date('2025-01-03');
+            let wd = 1, cur = new Date(start);
+            if (cur > targetDate) return 1;
+            while (cur < targetDate) {
+                cur.setDate(cur.getDate() + 1);
+                if (cur.getDay() !== 0) wd++;
+            }
+            return Math.min(wd, 397);
+        }
+        
+        function updateCard() {
+            const current = parseInt(document.getElementById('input-current').value) || 1;
+            const percent = ((current / 397) * 100).toFixed(1);
+            
+            document.getElementById('card-date').textContent = document.getElementById('input-dateStr').value;
+            
+            const holiday = document.getElementById('input-holiday').value;
+            const hEl = document.getElementById('card-holiday');
+            hEl.textContent = holiday;
+            hEl.style.display = holiday ? 'block' : 'none';
+            
+            document.getElementById('card-weather').textContent = document.getElementById('input-weather').value;
+            document.getElementById('card-dust').textContent = document.getElementById('input-dust').value;
+            document.getElementById('card-title').textContent = document.getElementById('input-title').value;
+            document.getElementById('card-progress').textContent = `${current}차/397차 (${percent}%)`;
+            document.getElementById('card-progress-bar').style.width = `${percent}%`;
+            document.getElementById('card-verse').textContent = document.getElementById('input-verse').value;
+            document.getElementById('card-verseRef').textContent = `- ${document.getElementById('input-verseRef').value}`;
+        }
+        
+        function downloadCard() {
+            const card = document.getElementById('card-preview');
+            html2canvas(card, { scale: 2, useCORS: true, backgroundColor: '#FDFBF7' }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = '말씀카드_' + document.getElementById('input-dateStr').value.replace(/ /g, '_') + '.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
+    </script>
+</body>
+</html>
