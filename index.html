@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>매일 말씀 카드 생성기</title>
     <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="html2canvas.min.js" onerror="var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';document.head.appendChild(s);"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #f3f4f6; font-family: 'Noto Sans KR', sans-serif; padding: 20px; min-height: 100vh; }
@@ -265,12 +265,25 @@
         }
         
         function downloadCard() {
+            const btn = document.querySelector('.btn-generate');
+            if (typeof html2canvas === 'undefined') {
+                alert('이미지 생성 라이브러리를 불러오지 못했어요.\n네트워크 상태를 확인한 후 새로고침해 주세요.');
+                return;
+            }
+            btn.disabled = true;
+            btn.textContent = '⏳ 생성 중...';
             const card = document.getElementById('card-preview');
-            html2canvas(card, { scale: 2, useCORS: true, backgroundColor: '#FDFBF7' }).then(canvas => {
+            html2canvas(card, { scale: 2, useCORS: true, backgroundColor: '#FDFBF7', imageTimeout: 5000 }).then(canvas => {
                 const link = document.createElement('a');
                 link.download = '말씀카드_' + document.getElementById('input-dateStr').value.replace(/ /g, '_') + '.png';
                 link.href = canvas.toDataURL('image/png');
                 link.click();
+            }).catch(e => {
+                console.error('❌ 이미지 생성 실패:', e);
+                alert('이미지 생성에 실패했어요: ' + (e && e.message ? e.message : e));
+            }).finally(() => {
+                btn.disabled = false;
+                btn.textContent = '📸 이미지로 저장';
             });
         }
     </script>
